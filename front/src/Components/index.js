@@ -1,5 +1,10 @@
-export { Blog } from "./Blog";
+export { Storage } from "./Storage";
 export { Header } from "./Header";
 export { Home } from "./Home";
 export { Latest } from "./Latest";
 export { Development } from "./Development";
+export { FileSave } from "./FileSave"
+export { FileGet } from "./FileGet"
+export { SideNavBar } from "./Storage/SideNavBar"
+export { FileAll } from "./FileAll"
+export { BurgerMenu } from "./BurgerMenu"
