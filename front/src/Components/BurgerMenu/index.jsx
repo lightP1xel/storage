@@ -29,13 +29,6 @@ export const BurgerMenu = () => {
           >
             Upload
           </Link>
-          <Link 
-            to="/storage/download" 
-            className="burger-link"
-            onClick={() => setIsOpen(false)}
-          >
-            Download
-          </Link>
         </div>
       )}
     </div>
