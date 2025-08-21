@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -36,7 +37,8 @@ func main() {
 	}
 
 	http.Handle("/upload", enableCORS(http.HandlerFunc(uploadFileHandler)))
-	http.Handle("/files/", http.StripPrefix("/files/", http.FileServer(http.Dir(uploadDir))))
+	http.Handle("/files", enableCORS(http.HandlerFunc(listFilesHandler)))
+	http.Handle("/upload/", http.StripPrefix("/upload/", http.FileServer(http.Dir(uploadDir))))
 
 	server := &http.Server{
 		Addr:         ":8080",
@@ -87,7 +89,51 @@ func uploadFileHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, `{
 		"message": "Файл успешно загружен",
 		"fileName": "%s",
-		"filePath": "/files/%s",
+		"filePath": "/upload/%s",
 		"fileSize": %d
 	}`, handler.Filename, newFilename, handler.Size)
+}
+
+func listFilesHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
+		return
+	}
+
+	files, err := os.ReadDir(uploadDir)
+	if err != nil {
+		http.Error(w, "Не удалось прочитать директорию с файлами", http.StatusInternalServerError)
+		return
+	}
+
+	type FileInfo struct {
+		Name    string `json:"name"`
+		Path    string `json:"path"`
+		Size    int64  `json:"size"`
+		ModTime string `json:"modTime"`
+	}
+
+	var fileList []FileInfo
+
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+
+		filePath := filepath.Join(uploadDir, file.Name())
+		fileInfo, err := os.Stat(filePath)
+		if err != nil {
+			continue
+		}
+
+		fileList = append(fileList, FileInfo{
+			Name:    file.Name(),
+			Path:    "/upload/" + file.Name(),
+			Size:    fileInfo.Size(),
+			ModTime: fileInfo.ModTime().Format(time.RFC3339),
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(fileList)
 }
